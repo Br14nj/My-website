@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOM Traversal Application</title>
+    <style>
+        /* Profile Section */
+        header {
+            padding: 10px;
+            border-bottom: 2px solid #ccc;
+            margin-bottom: 10px;
+        }
+
+        /* Node Styles */
+        #tree-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #tree {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .grandparent {
+            background-color: #ffd700;
+            padding: 20px;
+            margin: 10px;
+            position: relative;
+        }
+
+        .parent {
+            background-color: #87cefa;
+            padding: 15px;
+            margin: 10px;
+        }
+
+        .child {
+            background-color: #90ee90;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        .highlight {
+            border: 3px solid red;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .controls button {
+            margin: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <p><strong>Complete Name:</strong> Brian Jose D. Lim</p>
+        <p><strong>Sex:</strong> Male</p>
+        <p><strong>Address:</strong> Zone 4, San Francisco, Tigaon, Camarines sur</p>
+        <p><strong>Course, Year, and Section:</strong> BSIT 2-A</p>
+        <p><strong>Name of School:</strong> Partido State University</p>
+        <p><strong>Semester and Academic Year:</strong> 2nd Semester, AY 2024-2025</p>
+        <p><strong>Subject Code and Title:</strong> CS101 PF2 Event Driven Programming</p>
+        <p><strong>Name of Subject Instructor:</strong> Prof. Arjay F. Abio</p>
+    </header>
+
+    <div id="tree-container">
+        <div id="tree">
+            <div class="grandparent">Grandparent
+                <div class="parent">Parent 1
+                    <div class="child">Child 1</div>
+                    <div class="child">Child 2</div>
+                </div>
+                <div class="parent">Parent 2
+                    <div class="child">Child 3</div>
+                    <div class="child">Child 4</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="traverseDown()">Traverse Down</button>
+            <button onclick="traverseUp()">Traverse Up</button>
+            <button onclick="traverseNextSibling()">Next Sibling</button>
+            <button onclick="traversePrevSibling()">Previous Sibling</button>
+            <button onclick="addChild()">Add Child</button>
+            <button onclick="deleteNode()">Delete Selected</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedNode = null;
+
+        document.getElementById("tree").addEventListener("click", function(e) {
+            e.stopPropagation();
+            const target = e.target.closest(".grandparent, .parent, .child");
+            if (target) {
+                selectNode(target);
+            }
+        });
+
+        function selectNode(node) {
+            if (selectedNode) {
+                selectedNode.classList.remove("highlight");
+            }
+            selectedNode = node;
+            selectedNode.classList.add("highlight");
+        }
+
+        function traverseDown() {
+            if (!selectedNode) return;
+            const firstChild = [...selectedNode.children].find(child => child.classList.contains("parent") || child.classList.contains("child"));
+            if (firstChild) selectNode(firstChild);
+        }
+
+        function traverseUp() {
+            if (!selectedNode) return;
+            const parent = selectedNode.parentElement;
+            if (parent && (parent.classList.contains("parent") || parent.classList.contains("grandparent"))) {
+                selectNode(parent);
+            }
+        }
+
+        function traverseNextSibling() {
+            if (!selectedNode) return;
+            let next = selectedNode.nextElementSibling;
+            while (next && !next.classList.contains(selectedNode.classList[0])) {
+                next = next.nextElementSibling;
+            }
+            if (next) selectNode(next);
+        }
+
+        function traversePrevSibling() {
+            if (!selectedNode) return;
+            let prev = selectedNode.previousElementSibling;
+            while (prev && !prev.classList.contains(selectedNode.classList[0])) {
+                prev = prev.previousElementSibling;
+            }
+            if (prev) selectNode(prev);
+        }
+
+        function addChild() {
+            if (!selectedNode) return;
+            if (selectedNode.classList.contains("grandparent")) {
+                const newParent = document.createElement("div");
+                newParent.className = "parent";
+                newParent.textContent = "New Parent";
+
+                const child1 = document.createElement("div");
+                child1.className = "child";
+                child1.textContent = "New Child 1";
+
+                const child2 = document.createElement("div");
+                child2.className = "child";
+                child2.textContent = "New Child 2";
+
+                newParent.appendChild(child1);
+                newParent.appendChild(child2);
+                selectedNode.appendChild(newParent);
+            } else if (selectedNode.classList.contains("parent")) {
+                const newChild = document.createElement("div");
+                newChild.className = "child";
+                newChild.textContent = "New Child";
+                selectedNode.appendChild(newChild);
+            } else {
+                alert("Cannot add child to a child node.");
+            }
+        }
+
+        function deleteNode() {
+            if (!selectedNode) return;
+            if (selectedNode.classList.contains("grandparent")) {
+                alert("Cannot delete the grandparent node.");
+                return;
+            }
+            const toRemove = selectedNode;
+            traverseUp();
+            toRemove.remove();
+        }
+    </script>
+</body>
+</html>
