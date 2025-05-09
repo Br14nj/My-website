@@ -1,68 +1,98 @@
-const input = document.getElementById("guessInput");
-const message = document.getElementById("message");
-const hint = document.getElementById("hint"); // Grab hint container
-const submitBtn = document.getElementById("submitGuess");
-const restartBtn = document.getElementById("restartGame");
+const canvas = document.getElementById("myCanvas");
+const ctx = canvas.getContext("2d");
 
-function displayHint() {
-  hint.textContent = 🕵️ Hint: The word starts with '${secretWord[0].toUpperCase()}' and has ${secretWord.length} letters.;
-}
+let circles = [];
+let selectedCircle = null;
+let isDragging = false;
+const defaultRadius = 20;
+const minRadius = 5;
 
-function checkGuess() {
-  let guess = input.value.trim().toLowerCase();
+canvas.addEventListener("mousedown", function (e) {
+  const mousePos = getMousePos(e);
+  let clicked = false;
 
-  if (guess === "") {
-    message.textContent = Incorrect guess. You have ${attemptsLeft - 1} attempts left. Try again!;
-    attemptsLeft--;
-  } else if (guess === secretWord) {
-    message.textContent = "🎉 Congratulations! You guessed the secret word!";
-    document.body.style.backgroundColor = "#c8e6c9";
-    hint.textContent = "";
-    endGame();
-  } else {
-    attemptsLeft--;
-    if (attemptsLeft > 0) {
-      message.textContent = Incorrect guess. You have ${attemptsLeft} attempts left. Try again!;
-    } else {
-      message.textContent = ❌ Game over! The secret word was '${secretWord}'.;
-      document.body.style.backgroundColor = "#ffcdd2";
-      hint.textContent = "";
-      endGame();
+  for (let i = circles.length - 1; i >= 0; i--) {
+    if (isInsideCircle(mousePos, circles[i])) {
+      selectedCircle = circles[i];
+      selectedCircle.color = "red";
+      isDragging = true;
+      clicked = true;
+      break;
     }
   }
 
-  input.value = "";
-  if (attemptsLeft > 0) {
-    displayHint(); // Show hint only if game is still ongoing
+  if (!clicked) {
+    deselectAll();
+    const newCircle = {
+      x: mousePos.x,
+      y: mousePos.y,
+      radius: defaultRadius,
+      color: "blue"
+    };
+    circles.push(newCircle);
   }
-}
 
-function endGame() {
-  submitBtn.disabled = true;
-  input.disabled = true;
-  restartBtn.style.display = "inline-block";
-}
+  drawCircles();
+});
 
-function restartGame() {
-  secretWord = words[Math.floor(Math.random() * words.length)];
-  attemptsLeft = 5;
-  console.log("New Secret Word:", secretWord);
-  message.textContent = "";
-  hint.textContent = "";
-  input.value = "";
-  input.disabled = false;
-  submitBtn.disabled = false;
-  restartBtn.style.display = "none";
-  document.body.style.backgroundColor = "white";
-  displayHint(); // Show new hint for restarted game
-}
-
-submitBtn.addEventListener("click", checkGuess);
-restartBtn.addEventListener("click", restartGame);
-input.addEventListener("keyup", function (event) {
-  if (event.key === "Enter") {
-    checkGuess();
+canvas.addEventListener("mousemove", function (e) {
+  if (isDragging && selectedCircle) {
+    const pos = getMousePos(e);
+    selectedCircle.x = pos.x;
+    selectedCircle.y = pos.y;
+    drawCircles();
   }
 });
 
-displayHint(); // Show initial hint
+canvas.addEventListener("mouseup", function () {
+  isDragging = false;
+});
+
+canvas.addEventListener("wheel", function (e) {
+  if (selectedCircle) {
+    e.preventDefault();
+    selectedCircle.radius += e.deltaY < 0 ? 2 : -2;
+    if (selectedCircle.radius < minRadius) {
+      selectedCircle.radius = minRadius;
+    }
+    drawCircles();
+  }
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Delete" && selectedCircle) {
+    circles = circles.filter(c => c !== selectedCircle);
+    selectedCircle = null;
+    drawCircles();
+  }
+});
+
+function getMousePos(evt) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top
+  };
+}
+
+function isInsideCircle(pos, circle) {
+  const dx = pos.x - circle.x;
+  const dy = pos.y - circle.y;
+  return Math.sqrt(dx * dx + dy * dy) <= circle.radius;
+}
+
+function drawCircles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  circles.forEach(circle => {
+    ctx.beginPath();
+    ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
+    ctx.fillStyle = circle.color;
+    ctx.fill();
+    ctx.closePath();
+  });
+}
+
+function deselectAll() {
+  circles.forEach(c => c.color = "blue");
+  selectedCircle = null;
+}
